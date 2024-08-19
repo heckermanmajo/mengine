@@ -1,0 +1,3 @@
+---@class love.graphics.Canvas
+---@class love.graphics.Image
+---@class love.graphics.Quad
