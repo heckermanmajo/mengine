@@ -1,4 +1,4 @@
---- @class ZoomLevel ENUM; allows to change render modes based on the zoom level.
+ --- @class ZoomLevel ENUM; allows to change render modes based on the zoom level.
 ---
 --- the smaller the zoom level, the more detailed the rendering
 ---
@@ -229,7 +229,8 @@ end
 
 --- Checks if a position is within the viewport considering the zoom, camera movement, and padding.
 --- @param x number The x position.
---- @param y number The y position.
+--- @param y number The y position.lua language server
+
 --- @param screen_width number The width of the screen.
 --- @param screen_height number The height of the screen.
 --- @param padding number The padding around the viewport.

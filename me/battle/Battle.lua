@@ -1,11 +1,11 @@
 require("CONFIG")
 
---- @class Battle Contains all the state of the rts battle, except for BattleCamera
+--- @class Battle
+---
+--- Contains all the state of the rts battle, except for BattleCamera
 ---
 --- Battle manages its own resources like textures and sounds, this way we dont mix up the resources
 --- for camp and menu with the battle ones. A little bit of redundancy is no problem.
----
---- @see BattleCamera
 ---
 --- @field chunks table<number, BattleChunk> A list of all the chunks in the battle.
 --- @field chunks_on_lookup_table table<number, table<number, BattleChunk>> A lookup table for the chunks on the num-x and num-y coordinates.
@@ -14,6 +14,8 @@ require("CONFIG")
 --- @field world_size_in_pixels number The size of the world in pixels. The world is a square.
 --- @field world_size_in_chunks number The size of the world in chunks. The world is a square.
 --- @field tiles table<string, love.graphics.Image> A list of all the tiles in the battle.
+---
+--- @see BattleCamera
 Battle = {
   chunk_size_in_tiles = 0,
   tiles_size_in_pixels = 0,
@@ -29,6 +31,7 @@ Battle.__index = Battle
 
 --- Loads all the resources for the battle; THis function should be called once at the start of the game.
 --- Does NOT need to be called at the start of the battle.
+--- @return nil
 function Battle:load_resources()
   self.tiles = {
     gras = love.graphics.newImage("assets/tiles/gras_debug.png"),

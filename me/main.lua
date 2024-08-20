@@ -12,16 +12,29 @@ MAYBE: https://luals.github.io/
 
 
 ]]
+
+
+local todos = {
+  " Use Astar to navigte the unit",
+  " Add unit fighting with animation",
+  " Add place objects mode",
+  " collide with objects",
+  " if debug_pathfinding is enabled, draw the path as dots on top of the tiles",
+  " Add unit working with animation",
+}
+
 require("battle/SpriteGeneratorFrameAtlasQuad")
 require("battle/Unit")
 require("battle/Battle")
 require("battle/BattleTile")
 require("battle/BattleChunk")
 require("battle/BattleCamera")
+require("battle/Pathfinder")
 
 local ScreenWidth
 local ScreenHeight
 
+--- @type Unit
 local unit
 
 function love.load()
@@ -39,16 +52,47 @@ function love.load()
   end
 
   unit = Unit.new(32, 32)
+  --unit.path = Pathfinder.get_path(32, 32, 32, 200)
 
   --print(#Battle:get_chunk_at_pixel(2,2).units)
   --os.exit()
 end
 
+local todo_font = love.graphics.newFont(40)
+local default_font = love.graphics.newFont(12)
+--- This function draws a todo-list on front of a black screen.
+--- The list is shown if the F1 key is pressed.
+---
+function todo()
 
+  local start = 100
+  -- get mouse key 4
+  if love.mouse.isDown(4) then
+    --if love.keyboard.isDown("f1") then
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("TODO:", 10, 10)
+
+    -- increase the font size
+    love.graphics.setFont(todo_font)
+
+    for i, todo in ipairs(todos) do
+      love.graphics.print(todo, 10, start + i * 40)
+    end
+
+    -- reset the font size
+    love.graphics.setFont(default_font)
+
+  end
+
+end
 
 function love.update(dt)
 
-  Unit.static.frame_progression = Unit.static.frame_progression + dt
+  if #unit.path == 0 then
+    unit.path = Pathfinder.get_path(unit.x, unit.y, math.random(32, 500), math.random(32, 500))
+  end
 
   Battle:update(dt)
   --unit:update_frame()
@@ -71,6 +115,8 @@ function love.draw()
   Battle.draw(dt)
 
   unit:draw()
+
+  todo()
 end
 
 function love.keypressed(key)

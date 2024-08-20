@@ -12,8 +12,10 @@ Pathfinder.__index = Pathfinder
 --- @return table<number, BattleTile>|nil the path from the given pixel position to the other pixel position. Nil if no path is possible.
 function Pathfinder.get_path(from_x, from_y, to_x, to_y)
 
-  assert(Battle:in_world_bounds(from_x, from_y), "The from pixel position is not within the world bounds.: " .. from_x .. " " .. from_y)
-  assert(Battle:in_world_bounds(to_x, to_y), "The to pixel position is not within the world bounds.: " .. to_x .. " " .. to_y)
+  assert(Battle:in_world_bounds(from_x, from_y),
+    "The from pixel position is not within the world bounds.: " .. from_x .. " " .. from_y)
+  assert(Battle:in_world_bounds(to_x, to_y),
+    "The to pixel position is not within the world bounds.: " .. to_x .. " " .. to_y)
 
   -- todo: use a-star instead of this simple pathfinder
 
@@ -30,24 +32,25 @@ function Pathfinder.get_path(from_x, from_y, to_x, to_y)
 
   while current_tile ~= to_tile do
 
-    if delta_x > 0 then
-      current_tile = current_tile.neighbors["right"]
-      delta_x = delta_x - Battle.tiles_size_in_pixels
-    elseif delta_x < 0 then
-      current_tile = current_tile.neighbors["left"]
-      delta_x = delta_x + Battle.tiles_size_in_pixels
+    local one_or_two = math.random(1, 2)
+
+    if one_or_two == 1 then
+      if delta_y > 0 then
+        current_tile = current_tile.neighbors["bottom"]
+        delta_y = delta_y - Battle.tiles_size_in_pixels
+      elseif delta_y < 0 then
+        current_tile = current_tile.neighbors["top"]
+        delta_y = delta_y + Battle.tiles_size_in_pixels
+      end
+    else
+      if delta_x > 0 then
+        current_tile = current_tile.neighbors["right"]
+        delta_x = delta_x - Battle.tiles_size_in_pixels
+      elseif delta_x < 0 then
+        current_tile = current_tile.neighbors["left"]
+        delta_x = delta_x + Battle.tiles_size_in_pixels
+      end
     end
-
-    if current_tile == nil then return nil end
-
-    if delta_y > 0 then
-      current_tile = current_tile.neighbors["bottom"]
-      delta_y = delta_y - Battle.tiles_size_in_pixels
-    elseif delta_y < 0 then
-      current_tile = current_tile.neighbors["top"]
-      delta_y = delta_y + Battle.tiles_size_in_pixels
-    end
-
     if current_tile == nil then return nil end
 
     path[#path + 1] = current_tile
@@ -55,4 +58,5 @@ function Pathfinder.get_path(from_x, from_y, to_x, to_y)
   end
 
   return path
+
 end
