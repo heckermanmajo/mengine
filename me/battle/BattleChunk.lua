@@ -14,7 +14,7 @@ BattleChunk.__index = BattleChunk
 --- @see BattleChunk.load_from_save_game_data
 ---
 --- @return BattleChunk the new BattleChunk
-function BattleChunk.new(x_num, y_num)
+function BattleChunk.new(y_num, x_num)
 
   local pixel_size_per_chunk = Battle.tiles_size_in_pixels * Battle.chunk_size_in_tiles
   local absolute_position_x = x_num * pixel_size_per_chunk
@@ -34,8 +34,8 @@ function BattleChunk.new(x_num, y_num)
 
   -- Populate the tiles table with BattleTile objects.
   do
-    for x_num = 0, Battle.chunk_size_in_tiles-1 do
-      for y_num = 0, Battle.chunk_size_in_tiles-1 do
+    for y_num = 0, Battle.chunk_size_in_tiles-1 do
+      for x_num = 0, Battle.chunk_size_in_tiles-1 do
         print("CREATE TILE: x_num: " .. x_num .. " y_num: " .. y_num)
         self.tiles[#self.tiles + 1] = BattleTile.new(
           x_num * Battle.tiles_size_in_pixels + absolute_position_x,
@@ -96,12 +96,10 @@ function BattleChunk:render_canvas()
   love.graphics.setCanvas()
 end
 
---- Draws the chunk on the screen.
---- THIS IS PERFORMANCE CRITICAL CODE, so we dont create functions for each unit and visual object.
---- BUT DO THE RENDER LOGIC FOR THEM IN THIS FUNCTION AS WELL -> hope of faster jit compilation
+--- Draws the background of the chunk on the screen.
 --- @see BattleChunk:render_canvas uses a canvas to render the elements of the chunk that are not updated frequently
 --- @return nil
-function BattleChunk:draw()
+function BattleChunk:draw_background()
   -- draw the canvas
   -- also draw all units
   -- draw all visual objects (fire, f.e.)
@@ -127,6 +125,25 @@ function BattleChunk:draw()
     self.pixel_size_per_chunk * BattleCamera.zoom
   )
   love.graphics.setColor(1, 1, 1)
+
+end
+
+
+--- Draws the objects of the chunk on the screen.
+---
+--- Does need to be performed after all backgrounds are drawn.
+---
+--- @return nil
+function BattleChunk:draw_objects()
+    -- draw all objects and units
+  -- loop over all tiles and draw the unit on the tile
+  for _, tile in pairs(self.tiles) do
+    if tile.unit_opt then
+      tile.unit_opt:draw()
+      tile.unit_opt:draw_path()
+    end
+  end
+
 end
 
 --- Returns the tile at the given pixel position.
@@ -158,8 +175,10 @@ end
 --- Is called by battle all 0.1 seconds, which means 10 times per second; since the
 --- game runs at 30 fps, we have 3 frames to split the update logic.
 function BattleChunk:update(dt)
-  print("update chunk")
+
+  -- update all units in this chunk
   for _, unit in pairs(self.units) do
     unit:update()
   end
+
 end

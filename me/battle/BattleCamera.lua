@@ -1,4 +1,4 @@
- --- @class ZoomLevel ENUM; allows to change render modes based on the zoom level.
+--- @class ZoomLevel ENUM; allows to change render modes based on the zoom level.
 ---
 --- the smaller the zoom level, the more detailed the rendering
 ---
@@ -183,7 +183,6 @@ function BattleCamera:apply_camera_movement(
   if self.x < -padding then self.x = -padding end
   if self.y < -padding then self.y = -padding end
 
-
   if true then return end -- TODO: remove this line
   --[[
       { // move_world_with_mouse_middle_drag
@@ -215,8 +214,8 @@ function BattleCamera:apply_camera_movement(
 
 end
 
-
-function BattleCamera:recenter_camera_target_on_map(world_width_in_pixel, world_height_in_pixels, screen_width, screen_height)
+function BattleCamera:recenter_camera_target_on_map(world_width_in_pixel, world_height_in_pixels, screen_width,
+                                                    screen_height)
   if self.x > world_width_in_pixel - screen_width / self.zoom + self.recenter_padding then
     self.x = world_width_in_pixel - screen_width / self.zoom + self.recenter_padding
   end
@@ -248,4 +247,14 @@ function BattleCamera:position_in_viewport(x, y, screen_width, screen_height, pa
       and y >= -padding
       and y <= screen_height + padding
   )
+end
+
+--- Transforms a screen position to a world position.
+--- @param screen_x number The x position on the screen.
+--- @param screen_y number The y position on the screen.
+--- @return number, number The x and y position in the world.
+function BattleCamera:screen_to_world(screen_x, screen_y)
+  local world_x = screen_x / self.zoom + self.x
+  local world_y = screen_y / self.zoom + self.y
+  return world_x, world_y
 end

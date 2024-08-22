@@ -14,6 +14,7 @@ require("CONFIG")
 --- @field world_size_in_pixels number The size of the world in pixels. The world is a square.
 --- @field world_size_in_chunks number The size of the world in chunks. The world is a square.
 --- @field tiles table<string, love.graphics.Image> A list of all the tiles in the battle.
+--- @field factions table<string, Faction> A list of all the factions in the battle.
 ---
 --- @see BattleCamera
 Battle = {
@@ -26,6 +27,7 @@ Battle = {
   tiles = {
     gras = nil,
   },
+  factions = {},
 }
 Battle.__index = Battle
 
@@ -62,8 +64,8 @@ function Battle.init(
   --region Create_Chunks
   do
     Battle.chunks = {}
-    for x_num = 0, world_size_in_chunks - 1 do
-      for y_num = 0, world_size_in_chunks - 1 do
+    for y_num = 0, world_size_in_chunks - 1 do
+      for x_num = 0, world_size_in_chunks - 1 do
         print("CREATE CHUNK: x_num: " .. x_num .. " y_num: " .. y_num)
         Battle.chunks[#Battle.chunks + 1] = BattleChunk.new(x_num, y_num)
         if Battle.chunks_on_lookup_table[x_num] == nil then Battle.chunks_on_lookup_table[x_num] = {} end
@@ -126,7 +128,7 @@ function Battle:get_chunk_at_pixel(x, y)
   assert(Battle:in_world_bounds(x, y), "The pixel position is not within the world bounds.")
   local x_num = math.floor(x / (self.chunk_size_in_tiles * self.tiles_size_in_pixels))
   local y_num = math.floor(y / (self.chunk_size_in_tiles * self.tiles_size_in_pixels))
-  return self.chunks_on_lookup_table[x_num][y_num]
+  return self.chunks_on_lookup_table[y_num][x_num]
 end
 
 --- Draws the battle
@@ -151,7 +153,22 @@ function Battle.draw(dt)
       padding
     )
     if in_view then
-      chunk:draw(Battle, BattleCamera)
+      chunk:draw_background()
+    end
+  end
+
+  for index = 1, #Battle.chunks do
+    local chunk = Battle.chunks[index]
+    local padding = 500
+    local in_view = BattleCamera:position_in_viewport(
+      chunk.absolute_position.x,
+      chunk.absolute_position.y,
+      screen_width,
+      screen_height,
+      padding
+    )
+    if in_view then
+      chunk:draw_objects()
     end
   end
 
@@ -163,7 +180,6 @@ function Battle.draw(dt)
   end
 
 end
-
 
 --- This function checks that the state of the battle singleton is correct.
 --- It crashes if the state is not correct.
@@ -191,45 +207,103 @@ function Battle:get_tile(x, y, crash_if_not_exist)
   return tile
 end
 
+--- @type number The local update frame counter; only used in the Battle:update function.
 local update_frame_counter = 0
+
 --- Updates the battle by calling all the battle systems.
 --- PERFORMANCE CRITICAL CODE.
 --- @param dt number
 --- @return nil
 function Battle:update(dt)
 
-  --- @region Update 1/3 of the chunks per frame; All chunks are updated every 0.1 seconds.
-  --- Units and stuff are split up by their location in the chunk.
-  --- Therefore their update logic is split up by the chunks.
+  -- Update 1/3 of the chunks per frame; All chunks are updated every 0.1 seconds.
+  -- NOTE: THIS LOCKS THE SOURCE CODE TO 30 FPS!
+  -- Units and stuff are split up by their location in the chunk.
+  -- Therefore their update logic is split up by the chunks.
   do
     local chunks_to_update_this_step = #Battle.chunks / 3
     local start_index = update_frame_counter * chunks_to_update_this_step
     local end_index = start_index + chunks_to_update_this_step
-    for index = start_index+1, end_index do
+    for index = start_index + 1, end_index do
       local chunk = Battle.chunks[index]
       chunk:update(dt)
-      print("UPDATE CHUNK: " .. chunk.absolute_position.x .. " " .. chunk.absolute_position.y)
     end
     update_frame_counter = update_frame_counter + 1
     if update_frame_counter == 3 then update_frame_counter = 0 end
   end
-  --- @endregion
+
+  BattleCamera:apply_camera_movement(
+    dt,
+    Battle.world_size_in_pixels,
+    Battle.world_size_in_pixels,
+    love.graphics.getWidth(),
+    love.graphics.getHeight(),
+    true,
+    true
+  )
+
+  MouseDragUnitSelector:update_drag_and_select_units_if_release()
 
 end
 
---- @class Projectile
-Projectile = {}
-Projectile.__index = Projectile
+--- Returns the units in the given rectangle.
+--- @param x1 number x pixel coordinate relative to the world
+--- @param y1 number y pixel coordinate relative to the world
+--- @param x2 number x pixel coordinate relative to the world
+--- @param y2 number y pixel coordinate relative to the world
+--- @return table<number, Unit> the units in the given rectangle
+function Battle:get_units_in_rectangle(x1, y1, x2, y2)
+  -- todo: improve this efficiency ...
+  local units = {}
+  local real_x1 = math.min(x1, x2)
+  local real_x2 = math.max(x1, x2)
+  local real_y1 = math.min(y1, y2)
+  local real_y2 = math.max(y1, y2)
+  for _, chunk in ipairs(Battle.chunks) do
+    for _, unit in ipairs(chunk.units) do
+      if unit.x >= real_x1 and unit.x <= real_x2 and unit.y >= real_y1 and unit.y <= real_y2 then
+        units[#units + 1] = unit
+      end
+    end
+  end
+  return units
+end
 
---- @class NonMovableObject
-NonMovableObject = {}
-NonMovableObject.__index = NonMovableObject
+--- This is called if the given units should be selected.
+--- @param units table<number, Unit> The units that should be selected.
+--- @return nil
+---
+--- @see MouseDragUnitSelector:update_drag_and_select_units_if_release
+function Battle:handle_unit_selection(units)
 
---- @class VisualObject
-VisualObject = {}
-VisualObject.__index = VisualObject
+  -- todo
 
---- @class Effect
-Effect = {}
-Effect.__index = Effect
+  if #units == 0 then
+    print("NO UNITS SELECTED; if some are selected from before, they should be deselected.")
+  else
+    print("UNITS SELECTED: " .. #units)
+  end
+
+end
+
+--- Creates a default map.
+--- todo: later maps should be loaded from files.
+--- @return nil
+function Battle:create_default_map()
+  Battle.init(
+    3, -- chunk_size_in_tiles
+    32, -- tiles_size_in_pixels
+    6 -- world_size_chunks
+  )
+  Battle.factions = {
+    Faction.new("Player", { 0, 0, 1, 1 }),
+    Faction.new("Enemy", { 1, 0, 0, 1 }),
+    Faction.new("Neutral", { 0, 1, 1, 1 })
+  }
+end
+
+
+
+
+
 

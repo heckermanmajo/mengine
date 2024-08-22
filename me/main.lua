@@ -6,11 +6,6 @@ Wie machen wir das mit den threads?
 -> tile based combat
 -> love ist das einzige env wo man nur an das game und die logik denkt
 
-
-LUA LANGUAGE SERVER:
-MAYBE: https://luals.github.io/
-
-
 ]]
 
 
@@ -29,7 +24,13 @@ require("battle/Battle")
 require("battle/BattleTile")
 require("battle/BattleChunk")
 require("battle/BattleCamera")
+require("battle/NonMovableObject")
+require("battle/Projectile")
+require("battle/VisualObject")
+require("battle/Effect")
 require("battle/Pathfinder")
+require("battle/MouseDragUnitSelector")
+
 
 local ScreenWidth
 local ScreenHeight
@@ -52,10 +53,7 @@ function love.load()
   end
 
   unit = Unit.new(32, 32)
-  --unit.path = Pathfinder.get_path(32, 32, 32, 200)
 
-  --print(#Battle:get_chunk_at_pixel(2,2).units)
-  --os.exit()
 end
 
 local todo_font = love.graphics.newFont(40)
@@ -95,27 +93,12 @@ function love.update(dt)
   end
 
   Battle:update(dt)
-  --unit:update_frame()
-
-  BattleCamera:apply_camera_movement(
-    dt,
-    Battle.world_size_in_pixels,
-    Battle.world_size_in_pixels,
-    love.graphics.getWidth(),
-    love.graphics.getHeight(),
-    true,
-    true
-  )
 
 end
 
 function love.draw()
-  love.graphics.print("Hello World!", 400, 300)
-  -- get fps
   Battle.draw(dt)
-
-  unit:draw()
-
+  MouseDragUnitSelector:draw_mouse_drag_selection()
   todo()
 end
 
